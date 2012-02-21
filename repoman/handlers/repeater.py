@@ -1,5 +1,6 @@
 from handler import Handler
-import repoman.tools
+
+from .. import tools
 
 import json
 
@@ -13,9 +14,13 @@ class Repeater(Handler):
         if self.git_url is not None:
             doc['git_url'] = self.git_url
 
-        conn, path, headers = repoman.tools.make_connection(self.url)
+        conn, path, headers = tools.make_connection(self.url)
         conn.request('POST', path, json.dumps(doc), headers)
         response = conn.getresponse()
 
-        log.write('Repeater: posted to server at %s, reponse: %s %s' % (self.url, response.status, response.reason))
+        log.write('Repeater: posted to server at %s, reponse: %s %s' % (
+            self.url,
+            response.status,
+            response.reason
+        ))
 

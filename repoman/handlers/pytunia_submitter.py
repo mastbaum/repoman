@@ -25,34 +25,47 @@ class PytuniaSubmitter(Handler):
             sha = commit['id']
 
             # record (revision) document
-            record = {'_id': sha,
-                      'type': 'record',
-                      'description': commit['message'],
-                      'created': time.time(),
-                      'author': commit['author']['name'],
-                      'changeset_url': self.changeset_base_url + sha}
+            record = {
+                '_id': sha,
+                'type': 'record',
+                'description': commit['message'],
+                'created': time.time(),
+                'author': commit['author']['name'],
+                'changeset_url': self.changeset_base_url + sha
+            }
+
             docs.append(record)
 
             # cppcheck task document
-            cppcheck = {'_id': uuid.uuid4().get_hex(),
-                        'type': 'task',
-                        'name': 'cppcheck',
-                        'created': time.time(),
-                        'platform': 'linux',
-                        'kwargs': {'sha': sha,
-                                   'git_url' : self.git_url},
-                        'record_id': sha}
+            cppcheck = {
+                '_id': uuid.uuid4().get_hex(),
+                'type': 'task',
+                'name': 'cppcheck',
+                'created': time.time(),
+                'platform': 'linux',
+                'kwargs': {
+                    'sha': sha,
+                    'git_url' : self.git_url
+                },
+                'record_id': sha
+            }
+
             docs.append(cppcheck)
 
             # fixme detector task document
-            fixme = {'_id': uuid.uuid4().get_hex(),
-                    'type': 'task',
-                    'name': 'fixme',
-                    'created': time.time(),
-                    'platform': 'linux',
-                    'kwargs': {'sha': sha,
-                               'git_url': self.git_url},
-                    'record_id': sha}
+            fixme = {
+                '_id': uuid.uuid4().get_hex(),
+                'type': 'task',
+                'name': 'fixme',
+                'created': time.time(),
+                'platform': 'linux',
+                'kwargs': {
+                    'sha': sha,
+                    'git_url': self.git_url
+                },
+                'record_id': sha
+            }
+
             docs.append(fixme)
 
             # get task names with github api
@@ -63,26 +76,31 @@ class PytuniaSubmitter(Handler):
             tree = json.loads(resp.read())['tree']
 
             for item in tree:
-                if item['type'] == 'tree' and item['path'][:len(self.test_path)] == self.test_path and item['path'] != self.test_path:
+                p = self.test_path
+                if item['type'] == 'tree' and item['path'][:len(p)] == p and item['path'] != p:
                     tasknames.append(item['path'].split('/')[-1])
 
             # rattest task documents
             for taskname in tasknames:
                 taskid = uuid.uuid4().get_hex()
-                task = {'_id': taskid,
-                        'type': 'task',
-                        'name': 'rattest',
-                        'created': time.time(),
-                        'platform': 'linux',
-                        'kwargs': {'sha': sha,
-                                   'git_url' : self.git_url,
-                                   'testname': taskname},
-                        'record_id': sha}
-                docs.append(task)
+                task = {
+                    '_id': taskid,
+                    'type': 'task',
+                    'name': 'rattest',
+                    'created': time.time(),
+                    'platform': 'linux',
+                    'kwargs': {
+                        'sha': sha,
+                        'git_url' : self.git_url,
+                        'testname': taskname
+                    },
+                    'record_id': sha
+                }
 
+                docs.append(task)
 
         docs_json = json.dumps(docs)
 
-        #push to db
+        # FIXME push to db
         log.write('PytuniaSubmitter: pushed %i documents to pytunia for record %s' % (len(docs), sha))
 
