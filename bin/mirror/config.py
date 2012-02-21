@@ -1,0 +1,2 @@
+mirror_dir = '/tmp'
+

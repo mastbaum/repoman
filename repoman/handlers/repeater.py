@@ -1,5 +1,6 @@
 from handler import Handler
 
+from ..log import log
 from .. import tools
 
 import json
