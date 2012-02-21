@@ -2,10 +2,9 @@
 
 import sys
 import json
-from cgi import parse_qs # need?
 from wsgiref.simple_server import make_server
 
-import config
+import settings
 
 def main(env, start_response):
     if env['REQUEST_METHOD'] != 'POST':
@@ -15,10 +14,7 @@ def main(env, start_response):
         request_body = env['wsgi.input'].read(request_length)
         doc = json.loads(request_body)
 
-        repo_name = doc['repository']['name']
-        for handler in config.handlers[repo_name]:
-            print 'Handler:', handler
-            handler.handle(doc)
+        print doc
 
     status = '200 OK'
     headers = [('Content-type', 'text/plain')]
@@ -33,6 +29,6 @@ if __name__ == '__main__':
     port = int(sys.argv[1])
     httpd = make_server('', port, main)
 
-    print 'repoman starting on localhost:%i' % port
+    print 'docbuild starting on localhost:%i' % port
     httpd.serve_forever()
 
