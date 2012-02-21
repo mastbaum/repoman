@@ -17,6 +17,5 @@ class Repeater(Handler):
         conn.request('POST', path, json.dumps(doc), headers)
         response = conn.getresponse()
 
-        # FIXME log
-        print 'posted to server at %s, reponse: %s %s' % (self.url, response.status, response.reason)
+        log.write('Repeater: posted to server at %s, reponse: %s %s' % (self.url, response.status, response.reason))
 

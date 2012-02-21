@@ -1,14 +1,17 @@
 from handler import Handler
 
-#import yelling
+from ..log import log
+from .. import yelling
 
 class Emailer(Handler):
     '''generate and send a commit summary email'''
-    def __init__(self):
-        # yelling settings: smtp server, etc.
-        pass
+    def __init__(self, recipients, sender=None):
+        self.recipients = recipients
+        self.sender = sender
 
     def handle(self, doc):
+        subject = '%i commit(s) pushed to %s (%s)' % (len(doc['commits']), doc['repository']['name'], doc['ref'])
+
         body = \
 '''%i commit(s) pushed to %s (on ref %s)
 Repository URL: %s
@@ -31,6 +34,6 @@ Message:
 
             body += commit_body
 
-        print body
-        #FIXME yelling.email
+        yelling.email(self.recipients, subject, body, self.sender)
+        log.write('Emailer: sent email "%s" to %i recipients' % (subject, len(self.recipients)))
 

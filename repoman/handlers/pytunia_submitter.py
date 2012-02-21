@@ -1,5 +1,7 @@
 from handler import Handler
 
+from ..log import log
+
 import time
 import httplib
 import json
@@ -16,7 +18,7 @@ class PytuniaSubmitter(Handler):
         self.oauth_token = oauth_token
 
     def handle(self, doc):
-        params = {'access_token': oauth_token, 'recursive': 1}
+        params = {'access_token': self.oauth_token, 'recursive': 1}
         docs = []
 
         for commit in doc['commits']:
@@ -55,7 +57,7 @@ class PytuniaSubmitter(Handler):
 
             # get task names with github api
             tasknames = []
-            conn = httplib.HTTPSConnection('https://api.github.com')
+            conn = httplib.HTTPSConnection('api.github.com')
             req = conn.request('GET', self.tree_base_url + sha + '?' + urllib.urlencode(params))
             resp = conn.getresponse()
             tree = json.loads(resp.read())['tree']
@@ -78,8 +80,9 @@ class PytuniaSubmitter(Handler):
                         'record_id': sha}
                 docs.append(task)
 
+
         docs_json = json.dumps(docs)
 
         #push to db
-        print docs_json
+        log.write('PytuniaSubmitter: pushed %i documents to pytunia for record %s' % (len(docs), sha))
 
