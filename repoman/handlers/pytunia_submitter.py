@@ -1,6 +1,7 @@
 from handler import Handler
 
 from ..log import log
+from .. import tools
 
 import time
 import httplib
@@ -10,7 +11,8 @@ import urllib
 
 class PytuniaSubmitter(Handler):
     '''push commits to the build tester'''
-    def __init__(self, git_url, changeset_base_url, tree_base_url, test_path, oauth_token):
+    def __init__(self, db_url, git_url, changeset_base_url, tree_base_url, test_path, oauth_token):
+        self.db_url = db_url
         self.git_url = git_url
         self.changeset_base_url = changeset_base_url
         self.tree_base_url = tree_base_url
@@ -99,8 +101,10 @@ class PytuniaSubmitter(Handler):
 
                 docs.append(task)
 
-        docs_json = json.dumps(docs)
+        docs_json = json.dumps({'docs': docs})
+        conn, path, headers = tools.make_connection(self.db_url)
+        conn.request('POST', '/%s/_bulk_docs' % path, docs_json, headers)
+        response = conn.getresponse()
 
-        # FIXME push to db
-        log.write('PytuniaSubmitter: pushed %i documents to pytunia for record %s' % (len(docs), sha))
+        log.write('PytuniaSubmitter: pushed %i documents to pytunia for record %s, response: %s %s' % (len(docs), sha, response.status, response.reason))
 

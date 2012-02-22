@@ -13,8 +13,9 @@ def main(env, start_response):
         status = '501 NOT IMPLEMENTED'
     else:
         request_length = int(env['CONTENT_LENGTH'])
-        request_body = env['wsgi.input'].read(request_length)
-        doc = json.loads(request_body)
+        request_body = parse_qs(env['wsgi.input'].read(request_length))
+
+        doc = json.loads(request_body['payload'][0])
 
         repo_name = doc['repository']['name']
         for handler in config.handlers[repo_name]:
