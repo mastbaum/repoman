@@ -11,7 +11,7 @@ import urllib
 
 class PytuniaSubmitter(Handler):
     '''push commits to the build tester'''
-    def __init__(self, db_url, git_url, changeset_base_url, tree_base_url, test_path, oauth_token):
+    def __init__(self, db_url, git_url, changeset_base_url, tree_base_url, test_path, oauth_token=None):
         self.db_url = db_url
         self.git_url = git_url
         self.changeset_base_url = changeset_base_url
@@ -20,7 +20,9 @@ class PytuniaSubmitter(Handler):
         self.oauth_token = oauth_token
 
     def handle(self, doc):
-        params = {'access_token': self.oauth_token, 'recursive': 1}
+        params = {'recursive': 1}
+        if self.oauth_token:
+            params['access_token'] = self.oauth_token
         docs = []
 
         for commit in doc['commits']:

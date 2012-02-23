@@ -3,6 +3,8 @@ from handler import Handler
 from ..log import log
 from .. import yelling
 
+import time
+
 body_template = \
 '''%i commit(s) pushed to %s (on ref %s)
 Repository URL: %s
@@ -16,7 +18,6 @@ ID: %s
 Timestamp: %s
 Author: %s (%s)
 Full diff: %s
-Message:
 
 %s
 
@@ -39,7 +40,8 @@ class Emailer(Handler):
             len(doc['commits']),
             doc['repository']['name'],
             doc['ref'],
-            doc['repository']['url'], 1
+            doc['repository']['url'],
+            time.asctime()
         )
 
         for c in doc['commits']:
@@ -53,6 +55,8 @@ class Emailer(Handler):
             )
 
             body += commit_body
+
+	body = ('Subject: %s' % subject) + '\n\n' + body
 
         yelling.email(self.recipients, subject, body, self.sender)
 
