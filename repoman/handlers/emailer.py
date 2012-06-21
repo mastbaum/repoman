@@ -10,9 +10,21 @@ body_template = \
 Repository URL: %s
 Date: %s
 
+Commit Summary
+==============
+%s
+
+Commit Details
+==============
+%s
 '''
 
-commit_template = '-' * 40 + \
+commit_summary_template = \
+'''
+%s: %s
+'''
+
+commit_detail_template = \
 '''
 ID: %s
 Timestamp: %s
@@ -27,6 +39,10 @@ class Emailer(Handler):
     '''generate and send a commit summary email'''
     def __init__(self, recipients, sender=None):
         self.recipients = recipients
+        if sender is None:
+            import socket
+            import getpass
+            sender = '%s@%s' % (getpass.getuser(), socket.getfqdn())
         self.sender = sender
 
     def handle(self, doc):
@@ -36,16 +52,16 @@ class Emailer(Handler):
             doc['ref']
         )
 
-        body = body_template % (
-            len(doc['commits']),
-            doc['repository']['name'],
-            doc['ref'],
-            doc['repository']['url'],
-            time.asctime()
-        )
-
+        commit_summary = ''
+        commit_details = ''
         for c in doc['commits']:
-            commit_body = commit_template % (
+            leader = c['message'].split('\n')[0]
+            commit_summary += commit_summary_template % (
+                c['id'][:7],
+                leader if len(leader) < 50 else (leader[:50] + '...')
+            )
+
+            commit_details += commit_detail_template % (
                 c['id'],
                 c['timestamp'],
                 c['author']['name'],
@@ -54,9 +70,15 @@ class Emailer(Handler):
                 c['message']
             )
 
-            body += commit_body
-
-	body = ('Subject: %s' % subject) + '\n\n' + body
+	body = ('Subject: %s' % subject) + '\n\n' + body_template % (
+            len(doc['commits']),
+            doc['repository']['name'],
+            doc['ref'],
+            doc['repository']['url'],
+            time.asctime(),
+            commit_summary,
+            commit_details
+        )
 
         yelling.email(self.recipients, subject, body, self.sender)
 

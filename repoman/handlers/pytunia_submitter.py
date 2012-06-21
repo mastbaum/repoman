@@ -25,7 +25,7 @@ class PytuniaSubmitter(Handler):
             params['access_token'] = self.oauth_token
         docs = []
 
-        for commit in doc['commits']:
+        for commit in doc['commits'][-1:]: # only test the last one (the PR merge)
             sha = commit['id']
 
             # record (revision) document
