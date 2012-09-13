@@ -17,7 +17,7 @@ def main(env, start_response):
 
         doc = json.loads(request_body['payload'][0])
 
-        repo_name = doc['repository']['name']
+        repo_name = doc['repository']['owner']['name'] + '/' + doc['repository']['name']
         for handler in config.handlers[repo_name]:
             handler.handle(doc)
 
