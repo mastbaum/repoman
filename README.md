@@ -13,7 +13,9 @@ These actions are written as `Handler` subclasses, and there are four handlers b
 
 Handlers are defined on a per-repository basis in a Python configuration file. An example is provided in `bin/`.
 
-There are two extra, standalone Python WSGI applications also included:
+Extra Tools
+-----------
+There are extra, standalone Python WSGI applications also included:
 
 1. `mirror` (in `bin/mirror`): clone/pull the repository to a local directory, creating a mirror
 2. `docbuild` (in `bin/docbuild`): build TeX documentation (easily modified to run any script on the repo)
@@ -29,3 +31,8 @@ github ---------> repoman
 ```
 
 Or just repoman (perhaps with custom `Handler`s), or just `mirror`, etc.
+
+### Pull Request Watcher ###
+A third, non-WSGI tool `pullci` is included, which triggers actions (handlers) based on open pull requests.
+
+As provided, `pullci` will start `pytunia` build tests of open pull requests. Specifically, these build tests will check out the HEAD of the request, attempt merge in the base ref, and run tests on that. Given an OAuth token, `pullci` will set the status of the HEAD commit to "pending" using the GitHub [commit status API](https://github.com/blog/1227-commit-status-api). `pytunia` (or your own tool) is responsible for setting the final status.
