@@ -3,6 +3,7 @@
 import time
 import httplib
 import urllib
+import socket
 import json
 import uuid
 import config
@@ -10,6 +11,8 @@ import config
 from repoman import tools
 from repoman.handlers.handler import Handler
 
+GLOBAL_SOCKET_TIMEOUT = 15
+socket.setdefaulttimeout(GLOBAL_SOCKET_TIMEOUT)
 
 class PullRequestWatcher:
     '''check the pull requests on a repository on a timer, and call repoman
@@ -33,41 +36,47 @@ class PullRequestWatcher:
     def check_pulls(self):
         '''generate pull request summary documents'''
         url = '/repos/%s/%s/pulls' % (self.user, self.repo)
-        conn = httplib.HTTPSConnection('api.github.com')
+        conn = httplib.HTTPSConnection('api.github.com', timeout=20)
         req = conn.request('GET', url + '?' + urllib.urlencode(self.params))
         resp = conn.getresponse()
         payload = json.loads(resp.read())
 
         for pr in payload:
-            # format appropriately for MergedPytuniaSubmitter
-            doc = {
-                'pull_url': pr['html_url'],
-                'base_repo_url': pr['base']['repo']['ssh_url'],
-                'base_repo_ref': pr['base']['ref'],
-                'url': pr['head']['repo']['ssh_url'],
-                'sha': pr['head']['sha'],
-                'full_name': pr['head']['repo']['full_name'],
-                'label': pr['head']['label'],
-                'message': pr['title'],
-                'author': pr['head']['user']['login']
-            }
+            try:
+                # format appropriately for MergedPytuniaSubmitter
+                issue_id = pr['html_url'].split('/')[-1]
+                doc = {
+                    'pull_url': pr['html_url'],
+                    'base_repo_url': pr['base']['repo']['ssh_url'],
+                    'base_repo_ref': pr['base']['ref'],
+                    'url': pr['head']['repo']['ssh_url'],
+                    'sha': pr['head']['sha'],
+                    'full_name': pr['head']['repo']['full_name'],
+                    'label': pr['head']['label'],
+                    'message': '%s (%s): %s' % (issue_id, pr['head']['sha'][:10], pr['title']),
+                    'author': pr['head']['user']['login']
+                }
 
-            user, repo = doc['full_name'].split('/')
-            sha = doc['sha']
+                user, repo = doc['full_name'].split('/')
+                sha = doc['sha']
 
-            conn, path, headers = tools.make_connection(self.db_url)
-            conn.request('GET', '/pytunia-ondemand/' + sha, headers=headers)
-            status = conn.getresponse().status
+                conn, path, headers = tools.make_connection(self.db_url)
+                conn.request('GET', '/pytunia-ondemand/' + sha, headers=headers)
+                status = conn.getresponse().status
 
-            # only proceed on 404, i.e. no test of this sha exists
-            if status == 401 or status == 403:
-                raise Exception('Authentication to builder failed')
-            elif status < 400:
-                continue
-            elif status != 404:
-                raise Exception('Unable to reach builder, error ' + status + ' occurred')
+                # only proceed on 404, i.e. no test of this sha exists
+                if status == 401 or status == 403:
+                    raise Exception('Authentication to builder failed')
+                elif status < 400:
+                    continue
+                elif status != 404:
+                    raise Exception('Unable to reach builder, error ' + status + ' occurred')
 
-            yield user, repo, sha, doc
+                yield user, repo, sha, doc
+            except TypeError:
+                pass
+            except socket.error:  # probably a timeout
+                pass
 
     @staticmethod
     def set_commit_status(user, repo, sha, status, description, target_url, oauth_token):
