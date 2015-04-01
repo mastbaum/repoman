@@ -21,6 +21,7 @@ class PytuniaSubmitter(Handler):
 
     def handle(self, doc):
         params = {'recursive': 1}
+        headers = {'User-Agent': 'repoman-pytunia-submitter'}
         if self.oauth_token:
             params['access_token'] = self.oauth_token
         docs = []
@@ -75,7 +76,7 @@ class PytuniaSubmitter(Handler):
             # get task names with github api
             tasknames = []
             conn = httplib.HTTPSConnection('api.github.com')
-            req = conn.request('GET', self.tree_base_url + sha + '?' + urllib.urlencode(params))
+            req = conn.request('GET', self.tree_base_url + sha + '?' + urllib.urlencode(params), None, headers)
             resp = conn.getresponse()
             tree = json.loads(resp.read())['tree']
 

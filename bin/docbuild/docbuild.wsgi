@@ -31,6 +31,7 @@ def main(env, start_response):
         subprocess.call(cmd, cwd=cwd)
 
         cwd = os.path.join(target_dir, config.build_cwd)
+        print cwd, config.build_cmd
         subprocess.Popen(config.build_cmd, cwd=cwd)
 
     status = '200 OK'

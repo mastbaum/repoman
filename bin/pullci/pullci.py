@@ -3,6 +3,7 @@
 import time
 import httplib
 import urllib
+import socket
 import json
 import uuid
 import socket
@@ -11,6 +12,8 @@ import config
 from repoman import tools
 from repoman.handlers.handler import Handler
 
+GLOBAL_SOCKET_TIMEOUT = 15
+socket.setdefaulttimeout(GLOBAL_SOCKET_TIMEOUT)
 
 class PullRequestWatcher:
     '''Check the pull requests on a repository on a timer, and call repoman
@@ -233,9 +236,12 @@ class PullRequestWatcher:
                     raise Exception('Unable to reach builder, error ' + status + ' occurred')
 
                 yield user, repo, sha, doc
-            except TypeError:
-                print 'TypeError', pr
-                continue
+            except TypeError as e:
+                print 'TypeError', e, pr
+                pass
+            except socket.error as e:
+                print 'socket.error in MergedPytuniaSubmitter post', e
+                pass
 
     @staticmethod
     def set_commit_status(user, repo, sha, status, description, target_url, oauth_token):
