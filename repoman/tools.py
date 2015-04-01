@@ -2,7 +2,7 @@ import httplib
 import base64
 import re
 
-def make_connection(url):
+def make_connection(url, headers={}):
     '''make an http(s) connection based on a url string. includes basic
     authentication.
     '''
@@ -18,10 +18,11 @@ def make_connection(url):
     else:
         conn = httplib.HTTPConnection(host)
 
-    headers = {'Content-type': 'application/json'}
+    hdrs = {'Content-type': 'application/json'}
+    hdrs.update(headers)
     if match.group('user'):
         auth_string = base64.encodestring('%s:%s' % (match.group('user'), match.group('pw')))[:-1]
-        headers['Authorization'] = 'Basic %s' % auth_string
+        hdrs['Authorization'] = 'Basic %s' % auth_string
 
-    return conn, path, headers
+    return conn, path, hdrs
 
