@@ -7,6 +7,7 @@ import socket
 import json
 import uuid
 import socket
+import ssl
 import config
 
 from repoman import tools
@@ -58,11 +59,18 @@ class PullRequestWatcher:
         except socket.error as e:
             print 'socket.error on request:', e
             return
-        resp = conn.getresponse()
+
         try:
+            resp = conn.getresponse()
             data = resp.read()
         except socket.error as e:
             print 'socket.error on read:', e
+            return
+        except ssl.SSLError as e:
+            print 'ssl.SSLError on read:', e
+            return
+        except httplib.BadStatusLine as e:
+            print 'httplib.BadStatusLine on read:', e
             return
 
         if resp.status > 399:
@@ -87,7 +95,8 @@ class PullRequestWatcher:
             response = conn.getresponse()
             payload = json.loads(response.read())
 
-            if 'completed' in payload and payload['completed']:
+            if (('completed' in payload and payload['completed']) or
+                ('error' in payload)):
                 return
 
             # loop over tests to see if we're done, and what the status is
@@ -149,8 +158,12 @@ class PullRequestWatcher:
                 except socket.error as e:
                     print 'socket.error:', e
                     return
+              
                 response = conn.getresponse()
                 payload = json.loads(response.read())
+
+                if 'error' in payload:
+                    return
 
                 payload['completed'] = True
 
@@ -188,11 +201,12 @@ class PullRequestWatcher:
             return
         try:
             resp = conn.getresponse()
+            data = resp.read()
         except Exception as e:
             print 'Exception: ' + str(e)
             yield None, None, None, None
             return
-        data = resp.read()
+
         try:
             payload = json.loads(data)
         except ValueError:
